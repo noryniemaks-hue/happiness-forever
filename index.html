@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>СЧАТЬЕ НАВСЕГДА</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: #000; }
+  body {
+    font-family: 'Georgia', serif;
+    color: #e8e0d5;
+    position: relative;
+    user-select: none;
+    overflow-x: hidden;
+    transition: filter 0.3s ease;
+  }
+
+  /* Эффект ускорения и искажения */
+  body.fast-music {
+    filter: hue-rotate(-40deg) contrast(1.5) saturate(1.5);
+  }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: rgba(0,0,0,0.5); }
+  ::-webkit-scrollbar-thumb { background: rgba(150,20,40,0.6); border-radius: 3px; }
+
+  /* ============================================================
+     ЗАГРУЗКА
+     ============================================================ */
+  #loading {
+    position: fixed; inset: 0; z-index: 500;
+    background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    transition: opacity 2s, filter 2s;
+    overflow: hidden;
+  }
+  
+  #loading::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 20;
+    background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)" opacity="0.15"/></svg>');
+    opacity: 0; transition: opacity 0.1s;
+  }
+  #loading.glitch-active::after { opacity: 1; }
+
+  #loadingText {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 52px; font-weight: bold; color: #fff;
+    text-shadow: 0 0 10px rgba(255,255,255,0.8), 0 0 20px #FF69B4, 0 0 40px #FF69B4, 4px 4px 0 #333;
+    margin-bottom: 40px; z-index: 10; letter-spacing: 3px; position: relative;
+  }
+  
+  .text-glitch { animation: textGlitchAnim 0.2s infinite; color: #ff2040 !important; text-shadow: 2px 0 0 #00ffff, -2px 0 0 #ff0000 !important; }
+  @keyframes textGlitchAnim {
+    0% { transform: translate(0,0); } 25% { transform: translate(-2px, 2px) skewX(5deg); }
+    50% { transform: translate(2px, -2px) skewX(-5deg); } 75% { transform: translate(-2px, -2px); }
+    100% { transform: translate(2px, 2px); }
+  }
+
+  #loadBarWrap {
+    width: 60%; max-width: 600px; height: 30px;
+    background: rgba(255,255,255,0.2); border: 3px solid #fff; border-radius: 20px;
+    overflow: hidden; position: relative; z-index: 10;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15), inset 0 4px 8px rgba(255,255,255,0.5);
+    backdrop-filter: blur(5px); transition: border-color 1s, transform 0.1s;
+  }
+  #loadBarFill {
+    height: 100%; width: 0%; 
+    background: linear-gradient(90deg, #FF69B4, #FF1493, #FF69B4, #FF1493);
+    background-size: 300% 100%; box-shadow: 0 0 20px #FF1493, 0 0 40px #FF69B4;
+    animation: barAnim 2s linear infinite; transition: width 0.1s linear, background 1s; border-radius: 20px;
+  }
+  @keyframes barAnim { from { background-position: 0% 0; } to { background-position: 300% 0; } }
+
+  #loading.scary { background: linear-gradient(180deg, #200000 0%, #0a0000 100%); filter: contrast(1.5) saturate(0.5); }
+  #loading.scary #loadingText { color: #ff0000; text-shadow: 2px 2px 0 #000, 0 0 20px #ff0000, 0 0 40px #a00018; }
+  #loading.scary #loadBarWrap { border-color: #a00018; background: rgba(0,0,0,0.5); box-shadow: inset 0 0 20px #000; transform: skewX(5deg); }
+  #loading.scary #loadBarFill { background: linear-gradient(90deg, #300000, #a00018, #300000); box-shadow: 0 0 15px #ff0000; }
+
+  /* ============================================================
+     ДИСКЛЕЙМЕР
+     ============================================================ */
+  #disclaimer {
+    position: fixed; inset: 0; z-index: 300; background: #050002;
+    display: none; justify-content: center; align-items: center; padding: 20px;
+    overflow-y: auto; transition: opacity 2s cubic-bezier(0.4, 0, 0.2, 1), visibility 2s;
+  }
+  #disclaimer.fade-out { opacity: 0; visibility: hidden; }
+  
+  #diary {
+    width: min(550px, 90vw); background: #e8dfd3;
+    background-image: linear-gradient(90deg, transparent 40px, rgba(200,50,50,0.3) 40px, rgba(200,50,50,0.3) 42px, transparent 42px),
+                      radial-gradient(circle at 80% 20%, rgba(150,0,0,0.15), transparent 50%);
+    box-shadow: 0 0 0 4px #2a1216, 0 0 50px rgba(150,0,20,0.5), inset 0 0 40px rgba(100,50,30,0.3);
+    padding: 40px 30px 40px 60px; position: relative; color: #1a0a0a;
+    transform: rotate(-1deg); animation: diaryAppear 2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    clip-path: polygon(0 0, 100% 1%, 99% 99%, 1% 100%);
+  }
+  @keyframes diaryAppear {
+    from { opacity: 0; transform: rotate(-3deg) scale(0.9) translateY(20px); filter: blur(10px); }
+    to { opacity: 1; transform: rotate(-1deg) scale(1) translateY(0); filter: blur(0); }
+  }
+  
+  #diary h2 {
+    font-family: 'Courier New', monospace; font-size: 20px; font-weight: 900; letter-spacing: 2px;
+    color: #600010; margin-bottom: 24px; border-bottom: 2px double rgba(150,20,40,0.6);
+    padding-bottom: 12px; text-transform: uppercase; text-shadow: 1px 1px 0px rgba(255,255,255,0.5); text-align: center;
+  }
+  #diary p {
+    font-family: 'Courier New', monospace; font-size: 15px; line-height: 1.6;
+    margin-bottom: 16px; font-weight: 900; color: #1a0a0a; text-shadow: 0px 1px 0px rgba(255,255,255,0.6);
+  }
+  #diary .warn { color: #800018; font-size: 16px; border: 1px solid #a00018; padding: 10px; background: rgba(150,0,0,0.05); }
+  #diary .small { font-size: 13px; color: #5a4040; margin-top: 25px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 15px; font-style: italic; }
+  
+  #discBtn {
+    display: block; margin: 30px auto 0; background: transparent; border: 2px solid #600010;
+    color: #600010; padding: 12px 40px; font-family: 'Courier New', monospace;
+    font-size: 16px; font-weight: 900; letter-spacing: 3px; cursor: pointer;
+    transition: all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); position: relative; overflow: hidden;
+  }
+  #discBtn:hover { background: #600010; color: #e8dfd3; border-color: #ff2040; transform: scale(1.05); box-shadow: 0 0 40px rgba(200,20,50,0.8); }
+
+  /* ============================================================
+     МЕНЮ
+     ============================================================ */
+  #menu {
+    position: fixed; inset: 0; z-index: 200; display: flex; justify-content: center; align-items: center; overflow: hidden; background: #000;
+    opacity: 0; visibility: hidden; transition: opacity 3s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 3s;
+  }
+  #menu.active { opacity: 1; visibility: visible; }
+
+  #menu::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 5;
+    background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)" opacity="0.06"/></svg>');
+    opacity: 0.8; animation: vhsNoise 0.2s infinite;
+  }
+  @keyframes vhsNoise { 0% { transform: translate(0,0); } 25% { transform: translate(-2%, -2%); } 50% { transform: translate(2%, 2%); } 75% { transform: translate(-2%, 2%); } 100% { transform: translate(2%, -2%); } }
+
+  #bloodPool {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95);
+    width: 130vw; height: 130vh;
+    background: radial-gradient(ellipse at 50% 50%, #a00018 0%, #500008 40%, #150002 70%, #000 100%);
+    box-shadow: inset 0 0 150px rgba(0,0,0,0.95); z-index: 1;
+    transition: transform 6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 3s ease; opacity: 0;
+  }
+  #menu.active #bloodPool { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+
+  #menu::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2;
+    background: radial-gradient(circle at 50% 50%, transparent 30%, rgba(0,0,0,0.8) 100%);
+  }
+
+  #titleWrap {
+    position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
+    z-index: 10; text-align: center; pointer-events: none; width: 100%;
+    opacity: 0; transform: translate(-50%, -40px) scale(0.95);
+    transition: all 4s cubic-bezier(0.2, 0.9, 0.2, 1);
+  }
+  #menu.active #titleWrap { opacity: 1; transform: translate(-50%, 0) scale(1); transition-delay: 1.5s; }
+
+  /* Пульсация заголовка на битах */
+  #gameTitle {
+    font-size: clamp(40px, 9vw, 110px); letter-spacing: 12px; font-weight: normal;
+    color: #f0d8d8; text-shadow: 0 0 20px rgba(200,30,60,0.8), 0 0 60px rgba(150,0,30,0.6), 0 0 100px rgba(100,0,0,0.8);
+    display: inline-block; animation: titleFloat 6s ease-in-out infinite, pulseBeat 1.2s infinite alternate;
+  }
+  @keyframes titleFloat { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-10px) rotate(-0.5deg); } }
+  @keyframes pulseBeat { 
+    0% { transform: scale(1) rotate(0deg); text-shadow: 0 0 20px rgba(200,30,60,0.8); }
+    100% { transform: scale(1.05) rotate(0.5deg); text-shadow: 0 0 40px rgba(255,20,50,1), 0 0 80px rgba(200,0,30,0.8); }
+  }
+  
+  .glitch1 { color: #ff2040 !important; text-shadow: 0 0 40px #ff2040, 0 0 80px #800010 !important; transform: translateY(-3px) skewX(5deg) !important; }
+  .glitch2 { color: #ff6070 !important; text-shadow: -6px 0 0 rgba(0,255,200,0.6), 6px 0 0 rgba(255,0,50,0.9) !important; transform: translateX(-8px) !important; }
+  .glitch3 { letter-spacing: 25px !important; color: #fff !important; text-shadow: 10px 0 0 #a00018, -10px 0 0 #00a0a0 !important; transform: translateX(8px) scale(1.05) !important; }
+
+  #subtitle {
+    font-size: clamp(14px, 2vw, 22px); letter-spacing: 8px; color: #ff2040;
+    margin-top: 20px; font-style: italic; opacity: 0.9; animation: subFlicker 4s infinite;
+    text-shadow: 0 0 15px #ff0000, 0 0 30px #a00018; font-weight: bold;
+  }
+  @keyframes subFlicker { 0%,100%{opacity:0.9} 45%{opacity:0.5} 46%{opacity:1} 48%{opacity:0.3} 49%{opacity:0.9} }
+
+  #menuBtns {
+    position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%);
+    z-index: 20; display: flex; flex-direction: column; gap: 18px; align-items: center;
+    opacity: 0; transform: translate(-50%, 100px);
+    transition: all 3.5s cubic-bezier(0.19, 1, 0.22, 1);
+  }
+  #menu.active #menuBtns { opacity: 1; transform: translate(-50%, 0); transition-delay: 3s; }
+
+  /* Пульсация кнопок */
+  #menuBtns button {
+    background: rgba(15,2,4,0.8); border: 1px solid rgba(200,30,60,0.6);
+    color: #d08090; padding: 16px 70px; font-family: inherit; font-size: 16px;
+    letter-spacing: 6px; cursor: pointer; transition: all 0.4s;
+    backdrop-filter: blur(5px); min-width: 300px;
+    position: relative; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    animation: btnPulseBeat 1.2s infinite alternate;
+  }
+  #menuBtns button:nth-child(1) { animation-delay: 0s; }
+  #menuBtns button:nth-child(2) { animation-delay: 0.1s; }
+  #menuBtns button:nth-child(3) { animation-delay: 0.2s; }
+  
+  @keyframes btnPulseBeat { 
+    0% { transform: translateY(0) scale(1); }
+    100% { transform: translateY(-4px) scale(1.02); }
+  }
+
+  #menuBtns button::before {
+    content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,30,70,0.4), transparent);
+    transform: translateX(-100%); transition: transform 0.7s;
+  }
+  #menuBtns button:hover {
+    border-color: rgba(255,70,100,1); color: #fff;
+    box-shadow: 0 0 40px rgba(200,20,50,0.8), inset 0 0 20px rgba(200,20,50,0.3); letter-spacing: 8px;
+    animation-play-state: paused; /* Останавливаем анимацию при наведении, чтобы не дергалась */
+  }
+  #menuBtns button:hover::before { transform: translateX(100%); }
+  #menuBtns button:disabled { opacity: 0.3; cursor: default; letter-spacing: 6px; animation: none; }
+  #menuBtns button:disabled:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.5); border-color: rgba(200,30,60,0.6); color: #d08090; }
+
+  .btn-glitch1 { transform: translateX(5px) !important; color: #ff2040 !important; text-shadow: 0 0 10px #ff2040 !important; }
+  .btn-glitch2 { transform: translateX(-5px) !important; color: #ff6070 !important; opacity: 0.7 !important; }
+  .btn-glitch3 { letter-spacing: 10px !important; color: #fff !important; text-shadow: 2px 0 0 #ff0000, -2px 0 0 #00ffff !important; }
+
+  /* ============================================================
+     СЦЕНА (СТЕНА, ДЫРКА, ГЛАЗ)
+     ============================================================ */
+  #scene {
+    position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column;
+    background: #000; opacity: 0; visibility: hidden;
+    transition: opacity 3s ease, visibility 3s; perspective: 1000px;
+  }
+  #scene.active { opacity: 1; visibility: visible; }
+  
+  #wall {
+    position: absolute; inset: 0; z-index: 1;
+    background-color: #a89c47;
+    background-image: radial-gradient(circle at 20% 30%, rgba(80,60,20,0.6) 0%, transparent 40%),
+                      radial-gradient(circle at 80% 70%, rgba(100,80,30,0.5) 0%, transparent 50%),
+                      radial-gradient(circle at 50% 50%, rgba(150,130,70,0.3) 0%, transparent 60%),
+                      url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.4"/></svg>');
+    box-shadow: inset 0 0 250px #000;
+    filter: sepia(1) hue-rotate(-10deg) brightness(0.7) contrast(1.2);
+    transition: opacity 0.1s, filter 0.1s, brightness 0.1s;
+  }
+  #wall::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 40%, transparent 20%, #0a0800 85%); }
+
+  #spotlight {
+    position: absolute; top: -10%; left: 50%; transform: translateX(-50%);
+    width: 70vw; height: 90vh; background: radial-gradient(ellipse at 50% 20%, rgba(255,240,200,0.1), transparent 60%);
+    filter: blur(40px); z-index: 2; pointer-events: none; transition: opacity 0.1s;
+  }
+
+  .light-out #wall { filter: sepia(1) hue-rotate(-10deg) brightness(0.1) contrast(1.5); }
+  .light-out #spotlight { opacity: 0; }
+  .light-out #eyeBall { opacity: 0; }
+
+  #eyeWrap {
+    position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+    z-index: 5; width: 300px; height: 160px;
+  }
+
+  #hole {
+    position: absolute; inset: 0; background: #050505;
+    border-radius: 40% 60% 45% 55% / 55% 45% 60% 40%; 
+    box-shadow: inset 20px 20px 50px #000, inset -10px -10px 40px #000, 0 0 30px rgba(0,0,0,0.9);
+    overflow: hidden; border: 2px solid #1a1510; transform: rotate(2deg);
+  }
+  #hole::before {
+    content: ''; position: absolute; top: -15px; left: -15px; right: -15px; bottom: -15px;
+    background: #050505; z-index: -1;
+    clip-path: polygon(10% 0, 90% 5%, 100% 30%, 95% 80%, 80% 100%, 20% 95%, 5% 70%, 0 20%);
+    filter: blur(2px);
+  }
+  
+  #eyeBall {
+    position: absolute; top: 50%; left: 50%; width: 110px; height: 110px; margin: -55px 0 0 -55px;
+    background: #fff; border-radius: 50%; box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+    overflow: hidden; opacity: 0; transform: scaleY(0);
+    transition: opacity 1s, transform 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  #eyeBall.open { opacity: 1; transform: scaleY(1); }
+
+  #eyePupilWrap { position: absolute; inset: 0; transition: transform 0.05s linear; }
+
+  #eyeIris {
+    position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; margin: -25px 0 0 -25px;
+    background: radial-gradient(circle at 50% 50%, #4a90e2 0%, #1a4d8c 80%, #000 100%); border-radius: 50%;
+  }
+  #eyePupil {
+    position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px;
+    background: #000; border-radius: 50%;
+  }
+
+  #scratchedWords { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+  .scratch-phrase {
+    position: absolute; font-family: 'Courier New', monospace; font-size: 42px; font-weight: 100;
+    color: #200000; text-shadow: 1px 1px 0 #600000;
+    opacity: 0; transition: opacity 0.1s; letter-spacing: 2px; transform: rotate(-5deg);
+  }
+  .light-out .scratch-phrase { opacity: 1; }
+
+  #monologueWrap {
+    position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%);
+    width: min(850px, 92vw); z-index: 15; display: flex; gap: 20px; align-items: flex-end;
+  }
+
+  #monologue {
+    flex: 1; max-height: 40vh; overflow-y: auto;
+    padding: 20px 30px; display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth;
+    mask-image: linear-gradient(180deg, transparent, #000 15%, #000 100%);
+    -webkit-mask-image: linear-gradient(180deg, transparent, #000 15%, #000 100%);
+  }
+
+  .klara-line {
+    font-family: 'Georgia', serif; font-size: 20px; line-height: 1.8; color: #f0e8e0; font-style: italic;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.95); white-space: pre-wrap;
+    animation: lineFadeIn 1.5s ease forwards; opacity: 0;
+  }
+  @keyframes lineFadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+  
+  .klara-line.creepy { color: #ff8a8a; text-shadow: 0 0 15px rgba(200,20,40,0.6); }
+  .klara-line.death { color: #ff4060; font-weight: bold; letter-spacing: 1px; }
+  .klara-line.psycho { color: #d0a0ff; }
+
+  #crossbar {
+    width: 4px; height: 200px; background: rgba(255,255,255,0.05);
+    border-radius: 2px; position: relative; margin-bottom: 30px; flex-shrink: 0;
+  }
+  #crossbarFill {
+    position: absolute; top: 0; left: 0; width: 100%; height: 0%;
+    background: linear-gradient(180deg, #ff2040, #600010); box-shadow: 0 0 10px rgba(255,20,50,0.8);
+    transition: height 0.5s ease; border-radius: 2px;
+  }
+
+  #controls { position: absolute; top: 20px; right: 20px; z-index: 20; display: flex; gap: 12px; }
+  #controls button {
+    background: rgba(10,0,0,0.7); border: 1px solid rgba(180,30,50,0.5); color: #a07078;
+    width: 44px; height: 44px; border-radius: 50%; cursor: pointer; font-size: 20px;
+    display: flex; justify-content: center; align-items: center; transition: all 0.3s; backdrop-filter: blur(3px);
+  }
+  #controls button:hover { border-color: #ff4060; color: #fff; box-shadow: 0 0 20px rgba(200,20,50,0.7); transform: scale(1.1); }
+  
+  #nextBtn {
+    position: absolute; bottom: 4%; left: 50%; transform: translateX(-50%); z-index: 25;
+    background: rgba(20,0,0,0.8); border: 1px solid rgba(180,30,50,0.6); color: #d08090;
+    padding: 12px 50px; font-family: inherit; font-size: 14px; letter-spacing: 6px; cursor: pointer;
+    transition: all 0.4s; display: none; opacity: 0; backdrop-filter: blur(3px);
+  }
+  #nextBtn.show { display: block; animation: nextAppear 1s ease forwards; }
+  @keyframes nextAppear { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  #nextBtn:hover { color: #fff; border-color: #ff4060; box-shadow: 0 0 30px rgba(200,20,50,0.6); letter-spacing: 8px; }
+
+  /* ============================================================
+     ФИНАЛЬНАЯ КАТСЦЕНА
+     ============================================================ */
+  #finalBlackout {
+    position: fixed; inset: 0; z-index: 300; background: #000;
+    display: none; flex-direction: column; justify-content: center; align-items: center;
+    opacity: 0; transition: opacity 4s ease; cursor: none;
+  }
+  #finalBlackout.active { display: flex; opacity: 1; }
+
+  #finalText {
+    font-family: 'Courier New', monospace; font-size: 32px; font-weight: bold; color: #ff0000;
+    text-shadow: 0 0 20px #ff0000, 0 0 40px #a00018; text-align: center; padding: 0 20px; min-height: 100px;
+  }
+
+  #reportPaper {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: min(600px, 90vw); background: #e8dfd3; padding: 40px;
+    box-shadow: 0 0 0 4px #2a1216, 0 0 80px rgba(150,0,20,0.6);
+    color: #1a0a0a; font-family: 'Courier New', monospace; font-size: 16px; font-weight: 900;
+    line-height: 1.6; opacity: 0; visibility: hidden; transition: opacity 3s ease; border-radius: 2px;
+  }
+  #reportPaper.show { opacity: 1; visibility: visible; }
+  #reportPaper h3 { color: #a00018; border-bottom: 2px solid #a00018; padding-bottom: 10px; margin-bottom: 20px; text-align: center; }
+  
+  /* ============================================================
+     КНОПКА ВЫХОДА
+     ============================================================ */
+  #exitBtn {
+    position: absolute; top: 20px; left: 20px; z-index: 50;
+    background: rgba(15,2,4,0.8); border: 1px solid rgba(200,30,60,0.6); color: #d08090;
+    padding: 10px 20px; font-family: inherit; font-size: 14px; letter-spacing: 3px;
+    cursor: pointer; transition: all 0.3s; border-radius: 5px;
+  }
+  #exitBtn:hover { background: #600010; color: #fff; border-color: #ff2040; box-shadow: 0 0 20px rgba(200,20,50,0.8); }
+
+  /* Настройки / Модалки */
+  #settingsModal, #aboutModal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 400;
+    display: flex; justify-content: center; align-items: center; backdrop-filter: blur(8px);
+    opacity: 0; visibility: hidden; transition: opacity 1s ease, visibility 1s;
+  }
+  #settingsModal.active, #aboutModal.active { opacity: 1; visibility: visible; }
+  
+  #settingsBox, #aboutBox {
+    background: #0a0203; border: 1px solid rgba(180,20,40,0.5); padding: 40px;
+    border-radius: 12px; width: min(450px, 90vw); box-shadow: 0 0 60px rgba(150,0,20,0.4);
+    transform: scale(1); transition: transform 1s cubic-bezier(0.4, 0, 1, 1), opacity 1s ease, filter 1s ease;
+  }
+  #aboutBox {
+    background: #e8dfd3; color: #1a0a0a; width: min(550px, 90vw);
+    box-shadow: 0 0 0 4px #2a1216, 0 0 80px rgba(150,0,20,0.6);
+    clip-path: polygon(2% 0, 100% 2%, 98% 100%, 0 98%);
+  }
+  
+  #aboutModal.closing #aboutBox { transform: scale(0.95) translateY(20px); opacity: 0; filter: blur(5px); }
+
+  #aboutBox h3 { font-family: 'Courier New', monospace; font-size: 20px; font-weight: 900; color: #600010; margin-bottom: 20px; border-bottom: 3px dashed #600010; padding-bottom: 10px; }
+  #aboutBox p { font-family: 'Courier New', monospace; font-size: 15px; line-height: 1.7; margin-bottom: 15px; font-weight: 900; }
+  
+  #closeAbout, #closeSettings {
+    display: block; margin: 30px auto 0; background: transparent; border: 2px solid #600010;
+    color: #600010; padding: 10px 30px; font-family: 'Courier New', monospace;
+    font-size: 15px; font-weight: 900; cursor: pointer; transition: all 0.3s;
+  }
+  #closeAbout:hover, #closeSettings:hover { background: #600010; color: #e8dfd3; box-shadow: 0 0 20px rgba(200,20,50,0.5); }
+
+  #settingsBox { display: flex; flex-direction: column; gap: 25px; }
+  #settingsBox h3 { color: #d06070; margin-bottom: 10px; letter-spacing: 5px; font-size: 20px; text-align: center; font-weight: normal; text-shadow: 0 0 10px rgba(200,20,50,0.5); }
+  .settingRow { display: flex; justify-content: space-between; align-items: center; color: #b0a0a0; font-size: 15px; }
+  input[type=range] { -webkit-appearance: none; width: 180px; background: transparent; }
+  input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: #200005; border-radius: 5px; border: 1px solid #400010; box-shadow: inset 0 2px 5px rgba(0,0,0,0.8); }
+  input[type=range]::-webkit-slider-thumb { height: 20px; width: 20px; border-radius: 50%; background: radial-gradient(ellipse at 50% 20%, #ff6070, #a00018); cursor: pointer; -webkit-appearance: none; margin-top: -7px; box-shadow: 0 0 10px rgba(255,20,50,0.8); transition: transform 0.1s; }
+
+  #fadeOverlay { position: fixed; inset: 0; background: #000; z-index: 500; opacity: 0; pointer-events: none; transition: opacity 2s; }
+  #fadeOverlay.on { opacity: 1; pointer-events: auto; }
+</style>
+</head>
+<body>
+
+<!-- КНОПКА ВЫХОДА -->
+<button id="exitBtn">ВЫЙТИ</button>
+
+<!-- АУДИО ЭЛЕМЕНТ (МУЗЫКА МЕНЮ) -->
+<audio id="bgMusic" loop>
+  <source src="music/theme.mp3" type="audio/mpeg">
+</audio>
+
+<!-- ЭКРАН ЗАГРУЗКИ -->
+<div id="loading">
+  <div id="loadingText">ЗАГРУЗКА СЧАТЬЯ...</div>
+  <div id="loadBarWrap"><div id="loadBarFill"></div></div>
+</div>
+
+<div id="fadeOverlay"></div>
+
+<!-- ДИСКЛЕЙМЕР -->
+<div id="disclaimer">
+  <div id="diary">
+    <h2>ВНИМАНИЕ! ПРЕДУПРЕЖДЕНИЕ</h2>
+    <p class="warn">Эта игра содержит тяжелые и жестокие темы. Она не предназначена для детей и людей с нестабильной психикой.</p>
+    <p>В сюжете поднимаются темы психологического и физического насилия над детьми, убийства, расстройства личности, газлайтинга и смерти.</p>
+    <p>Это не просто хоррор. Это история о сломанном ребенке, замурованном в стене, и о том, как общество закрывает глаза на чудовищные вещи.</p>
+    <p class="small">Игра создана в художественных целях, чтобы вызвать эмоции и заставить задуматься. Если вам тяжело — закройте вкладку. Берегите себя.</p>
+    <button id="discBtn">Я ВСЁ ПОНЯЛ. НАЧАТЬ.</button>
+  </div>
+</div>
+
+<!-- МЕНЮ -->
+<div id="menu">
+  <div id="bloodPool"></div>
+  <div id="titleWrap">
+    <div id="gameTitle">СЧАТЬЕ НАВСЕГДА</div>
+    <div id="subtitle">Пока ты сидишь здесь — она гниет в стене</div>
+  </div>
+  <div id="menuBtns">
+    <button id="btnNew" class="menu-btn">НАЧАТЬ СЛУШАТЬ</button>
+    <button id="btnContinue" class="menu-btn" disabled>ПРОДОЛЖИТЬ</button>
+    <button id="btnAbout" class="menu-btn">ОБО МНЕ</button>
+  </div>
+</div>
+
+<!-- СЦЕНА -->
+<div id="scene">
+  <div id="wall"></div>
+  <div id="spotlight"></div>
+  
+  <div id="eyeWrap">
+    <div id="hole">
+      <div id="eyeBall">
+        <div id="eyePupilWrap">
+          <div id="eyeIris"></div>
+          <div id="eyePupil"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="scratchedWords">
+    <div class="scratch-phrase" style="top: 10%; left: 15%;">я уже труп</div>
+    <div class="scratch-phrase" style="top: 25%; right: 10%;">мама должна сдохнуть</div>
+    <div class="scratch-phrase" style="bottom: 30%; left: 20%;">я скоро задохнусь</div>
+    <div class="scratch-phrase" style="top: 60%; right: 25%;">помогите мне</div>
+    <div class="scratch-phrase" style="bottom: 10%; right: 15%;">оно смотрит</div>
+  </div>
+
+  <div id="controls">
+    <button id="btnSettings" title="Настройки">⚙</button>
+    <button id="btnSave" title="Сохранить">💾</button>
+    <button id="btnMenu" title="В главное меню">✖</button>
+  </div>
+
+  <div id="monologueWrap">
+    <div id="monologue"></div>
+    <div id="crossbar"><div id="crossbarFill"></div></div>
+  </div>
+  
+  <button id="nextBtn">ДАЛЬШЕ →</button>
+</div>
+
+<!-- ФИНАЛЬНАЯ КАТСЦЕНА -->
+<div id="finalBlackout">
+  <div id="finalText"></div>
+  <div id="reportPaper">
+    <h3>ОТЧЁТ ОБ ИНЦИДЕНТЕ</h3>
+    <p>Дата: 14 Октября. Объект: Заброшенный дом на ул. Ленина.</p>
+    <p>Во время проведения работ по сносу ветхого здания, в несущей стене подвального помещения строительными рабочими было обнаружено тело ребенка.</p>
+    <p>Останки принадлежат девочке 7-8 лет. Предварительная причина смерти — асфиксия (удушение) и обезвоживание.</p>
+    <p>Родители девочки, Клары В., находятся в розыске. По словам соседей, мать девочки страдала психическим расстройством.</p>
+    <p>Примечание: рядом с телом был обнаружен серый плюшевый заяц без одного уха.</p>
+  </div>
+</div>
+
+<!-- НАСТРОЙКИ -->
+<div id="settingsModal">
+  <div id="settingsBox">
+    <h3>НАСТРОЙКИ</h3>
+    <div class="settingRow">
+      <span>Громкость (АСМР):</span>
+      <input type="range" id="volSlider" min="0" max="100" value="40">
+    </div>
+    <div class="settingRow">
+      <span>Скорость текста:</span>
+      <input type="range" id="speedSlider" min="15" max="80" value="35">
+    </div>
+    <button id="closeSettings">ЗАКРЫТЬ</button>
+  </div>
+</div>
+
+<!-- ОБО МНЕ -->
+<div id="aboutModal">
+  <div id="aboutBox">
+    <h3>ОБО МНЕ</h3>
+    <p>Привет. Если честно, я не совсем нормальный. Мне 16, и я делаю такие жуткие игры, потому что через них мне проще выражать то, что у меня внутри.</p>
+    <p>Эта игра — про Клару, но она во многом про меня. Про то, как иногда страшно, как иногда кажется, что ты сходишь с ума, и как хочется, чтобы кто-то просто сел рядом и послушал.</p>
+    <p>Пусть называют это как хотят — больным, странным или ещё каким-то. Я делаю то, что чувствую. Спасибо, что ты зашёл сюда и выслушал её. И меня.</p>
+    <button id="closeAbout">ПОНЯТНО</button>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// АУДИО
+// ================================================================
+let audioCtx;
+let masterGain;
+let isAudioInit = false;
+let typeSpeed = 35;
+let targetVolume = 0.4;
+
+function initAudio() {
+  if (isAudioInit) return;
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  audioCtx = new AudioContext();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = targetVolume;
+  masterGain.connect(audioCtx.destination);
+  isAudioInit = true;
+
+  // Музыка в меню
+  const bgMusic = document.getElementById('bgMusic');
+  if (bgMusic) {
+    bgMusic.volume = 0.4;
+    bgMusic.play().catch(e => console.log("Автовоспроизведение заблокировано браузером."));
+  }
+}
+
+function playTypeSound(style) {
+  if (!isAudioInit || targetVolume <= 0) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  const filter = audioCtx.createBiquadFilter();
+
+  let freq = 400, type = 'sine', dur = 0.04, vol = 0.08;
+  if (style === 'whisper') { freq = 200; type = 'triangle'; vol = 0.03; dur = 0.06; }
+  if (style === 'creepy') { freq = 150; type = 'sawtooth'; vol = 0.06; dur = 0.08; }
+  if (style === 'death') { freq = 80; type = 'square'; vol = 0.12; dur = 0.1; }
+  if (style === 'psycho') { freq = 600; type = 'sine'; vol = 0.1; dur = 0.05; }
+  if (style === 'scream') { freq = 1200; type = 'sawtooth'; vol = 0.2; dur = 0.15; }
+
+  freq += Math.random() * 80 - 40;
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(1200, audioCtx.currentTime);
+
+  gain.gain.setValueAtTime(0, audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + 0.005);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+
+  osc.connect(filter);
+  filter.connect(gain);
+  gain.connect(masterGain);
+
+  osc.start();
+  osc.stop(audioCtx.currentTime + dur);
+}
+
+let ambienceOsc = null;
+function startAmbience(freq = 40, vol = 0.02) {
+  if (!isAudioInit || ambienceOsc) return;
+  ambienceOsc = audioCtx.createOscillator();
+  const ambGain = audioCtx.createGain();
+  const ambFilter = audioCtx.createBiquadFilter();
+  
+  ambienceOsc.type = 'sawtooth';
+  ambienceOsc.frequency.value = freq;
+  ambFilter.type = 'lowpass';
+  ambFilter.frequency.value = 100;
+  ambGain.gain.value = vol;
+  
+  ambienceOsc.connect(ambFilter);
+  ambFilter.connect(ambGain);
+  ambGain.connect(masterGain);
+  ambienceOsc.start();
+}
+function stopAmbience() {
+  if (ambienceOsc) { ambienceOsc.stop(); ambienceOsc = null; }
+}
+
+// ================================================================
+// ЛОГИКА ЗАГРУЗКИ
+// ================================================================
+let loadProgress = 0;
+const loadBarFill = document.getElementById('loadBarFill');
+const loadingScreen = document.getElementById('loading');
+const loadingText = document.getElementById('loadingText');
+
+function simulateLoading() {
+  const interval = setInterval(() => {
+    loadProgress += Math.random() * 4 + 1;
+    if (loadProgress > 20 && loadProgress < 85) {
+      if (Math.random() < 0.4) {
+        loadingScreen.classList.add('scary', 'glitch-active');
+        loadingText.classList.add('text-glitch');
+      } else {
+        loadingScreen.classList.remove('scary', 'glitch-active');
+        loadingText.classList.remove('text-glitch');
+      }
+    }
+    if (loadProgress >= 100) {
+      loadProgress = 100;
+      loadBarFill.style.width = '100%';
+      clearInterval(interval);
+      
+      loadingScreen.classList.add('scary', 'glitch-active');
+      loadingText.classList.add('text-glitch');
+      loadingText.textContent = "ОШИБКА";
+      
+      setTimeout(() => {
+        loadingScreen.style.opacity = '0';
+        setTimeout(() => {
+          loadingScreen.style.display = 'none';
+          document.getElementById('disclaimer').style.display = 'flex';
+        }, 2000);
+      }, 1500);
+    } else {
+      loadBarFill.style.width = loadProgress + '%';
+    }
+  }, 100);
+}
+
+window.addEventListener('load', () => {
+  setTimeout(simulateLoading, 500);
+});
+
+// ================================================================
+// СЛЕЖЕНИЕ ГЛАЗА
+// ================================================================
+let isEnding = false;
+let hasMoved = false;
+
+document.addEventListener('mousemove', (e) => {
+  if (isEnding) return;
+  const eyeWrap = document.getElementById('eyeWrap');
+  const eyePupilWrap = document.getElementById('eyePupilWrap');
+  if (!eyeWrap || !document.getElementById('scene').classList.contains('active')) return;
+  
+  if (!hasMoved) {
+    hasMoved = true;
+    document.getElementById('eyeBall').classList.remove('shaking-eye'); 
+  }
+  
+  const rect = eyeWrap.getBoundingClientRect();
+  const eyeX = rect.left + rect.width / 2;
+  const eyeY = rect.top + rect.height / 2;
+  const deltaX = e.clientX - eyeX;
+  const deltaY = e.clientY - eyeY;
+  
+  const maxMove = 20;
+  const angle = Math.atan2(deltaY, deltaX);
+  const distance = Math.min(Math.hypot(deltaX, deltaY), maxMove * 5);
+  const moveX = Math.cos(angle) * (distance / 5);
+  const moveY = Math.sin(angle) * (distance / 5);
+  
+  eyePupilWrap.style.transform = `translate(${moveX}px, ${moveY}px)`;
+});
+
+setInterval(() => {
+  if (hasMoved || isEnding) return;
+  const eyePupilWrap = document.getElementById('eyePupilWrap');
+  if (!eyePupilWrap) return;
+  const tx = (Math.random() - 0.5) * 4;
+  const ty = (Math.random() - 0.5) * 4;
+  eyePupilWrap.style.transform = `translate(${tx}px, ${ty}px)`;
+}, 150);
+
+// ================================================================
+// МЕРЦАНИЕ И СЛОВА
+// ================================================================
+setInterval(() => {
+  if (isEnding || !document.getElementById('scene').classList.contains('active')) return;
+  if (Math.random() < 0.4) {
+    const sceneEl = document.getElementById('scene');
+    const scratchWords = document.querySelectorAll('.scratch-phrase');
+    scratchWords.forEach(w => w.style.display = 'none');
+    const count = Math.floor(Math.random() * 5) + 1;
+    const shuffled = Array.from(scratchWords).sort(() => 0.5 - Math.random());
+    for(let i=0; i<count; i++) {
+        shuffled[i].style.display = 'block';
+        shuffled[i].style.top = Math.floor(Math.random() * 80) + 10 + '%';
+        shuffled[i].style.left = Math.floor(Math.random() * 80) + 10 + '%';
+        shuffled[i].style.right = 'auto';
+        shuffled[i].style.bottom = 'auto';
+    }
+    sceneEl.classList.add('light-out');
+    setTimeout(() => sceneEl.classList.remove('light-out'), 2000 + Math.random() * 1000);
+  }
+}, 35000); 
+
+// ================================================================
+// СЦЕНАРИЙ
+// ================================================================
+const SCRIPT = [
+  {
+    lines: [
+      { text: "Привет. Ты меня видишь?", style: "normal" },
+      { text: "Я знала, что кто-нибудь придёт. Я ждала. Тут время идёт не так, как у вас. Оно как будто застыло. Но я ждала.", style: "normal" },
+      { text: "Меня зовут Клара. Мне семь лет. Ну, мне сказали, что семь. Я уже не уверена. Но пусть будет семь.", style: "normal" },
+      { text: "Ты не будешь говорить. Я знаю. Мне сказали, что ты будешь только слушать. Это хорошо. Я давно никому не рассказывала. Мне не с кем было.", style: "normal" },
+      { text: "Тут только стена. Стена не слушает. Стена просто стоит. Но иногда мне кажется, что она дышит.", style: "creepy" },
+      
+      { text: "Я жила в доме. В доме были обои. В цветочек. Бледно-розовые. Я их считала, когда не могла уснуть. Досчитала до ста двадцати семи. Потом сбилась.", style: "normal" },
+      { text: "В доме была мама. Она говорила: «Клара, не шуми». «Клара, не плачь». «Клара, улыбнись, тебе идёт». Я улыбалась. Я всегда улыбалась. Даже когда хотелось кричать.", style: "normal" },
+      { text: "Я боялась темноты. Мама оставляла свет в коридоре. Но свет был за дверью. И я смотрела на полоску под дверью. Пока полоска есть — я не одна.", style: "normal" },
+      { text: "Однажды полоска исчезла. Я лежала всю ночь. Не плакала. Мама говорила, что плакать нельзя. Плакать — это для тех, кто хочет, чтобы их услышали. А меня никто не слышал.", style: "normal" },
+      { text: "Утром мама сказала: «Ничего не было». И я поверила. Потому что если мама так говорит — значит, так и есть. А то, что я помню — это не считается. Я придумываю. Я маленькая.", style: "creepy" },
+      
+      { text: "Однажды мама сказала: «Мы поедем туда, где тебе будет хорошо. Навсегда». Я думала, мы поедем в парк. Я взяла зайца. Серого, с одним ухом.", style: "normal" },
+      { text: "Мы приехали сюда. Тут было темно. Мама посадила меня и сказала: «Сиди. Жди». Я спросила: «А ты?» Она сказала: «Я не умею слушать. Я умею только говорить, как надо». И ушла.", style: "death" },
+      { text: "А стена сомкнулась. Прямо у меня за спиной. Я даже не успела закричать.", style: "death" },
+      
+      { text: "Я сидела. Долго. Свет горел. Он не выключался. Я думала: «Ну ничего. Кто-нибудь придёт». Потом перестала думать. Потом... ты пришёл.", style: "normal" },
+      
+      { text: "Но ты не первый. До тебя были другие. Они приходили и уходили. Они не слушали. Они говорили мне, как надо. Как правильно. Как счастливо.", style: "creepy" },
+      { text: "Они уходили, и я оставалась. Я оставалась тут. В стене. С этим глазом. Я смотрю на них, а они не видят меня. Видят только стену.", style: "creepy" },
+      
+      { text: "А потом я поняла: счастье — это не то, что приходит. Счастье — это то, что ты делаешь сам.", style: "psycho" },
+      { text: "Я сказала себе: «Клара, тебе хорошо. Клара, ты счастлива. Клара, улыбнись». И я улыбнулась. И мне стало... не хорошо. Но я сказала, что хорошо. И поверила.", style: "psycho" },
+      { text: "Потому что если говорить достаточно долго — начинаешь верить. Правда. Проверено.", style: "psycho" },
+      
+      { text: "Я начала говорить с собой. Сначала шёпотом. Потом громче. Потом я поняла, что я не одна. Нас двое.", style: "psycho" },
+      { text: "Я и та, которая говорит. Она говорит мне, что всё хорошо. Она говорит, что мама не виновата. Она говорит, что я сама во всём виновата.", style: "psycho" },
+      { text: "Я слушаю её. Я всегда её слушаю. Потому что больше некому слушать.", style: "psycho" },
+      
+      { text: "Ты слушаешь меня сейчас. Но ты уйдёшь. Все уходят. И тогда вернётся она.", style: "death" },
+      { text: "Она скажет, что ты не настоящий. Что ты придуманный. Что ты — это я. И я поверю. Потому что если не верить — останется только пустота.", style: "death" },
+      { text: "А пустоты я боюсь больше, чем её. Пустота — это когда ничего нет. Даже боли. Даже страха. Просто ничего. И так навсегда.", style: "death" },
+      
+      { text: "Я не хочу, чтобы ты уходил. Не потому что ты хороший. А потому что ты — громче, чем она. Пока ты здесь — я главная.", style: "psycho" },
+      { text: "Знаешь, что такое счастье? Счастье — это когда ты перестаёшь чувствовать. Когда ты не чувствуешь боли. Не чувствуешь страха. Не чувствуешь одиночества.", style: "psycho" },
+      { text: "Ты просто есть. Как свет. Как стена. Как я. Я научилась этому. Я могу научить тебя. Только не уходи. Останься. Ещё немного. Пожалуйста.", style: "psycho" },
+      
+      { text: "Я слышу, как стена дышит. Она дышит всё громче. Или это я дышу? Я уже не понимаю.", style: "creepy" },
+      { text: "Я чувствую, как что-то ползёт по моим ногам. Оно холодное. Оно живое. Оно хочет, чтобы я осталась.", style: "creepy" },
+      { text: "Мне кажется, я гнию заживо. Я чувствую запах. Он сладкий. Он везде. Я не хочу быть здесь.", style: "death" },
+      { text: "Пожалуйста, не уходи. Мне так страшно. Мне так темно. Я не хочу быть одна.", style: "death" },
+      
+      { text: "Ты дослушал до конца. Ты был здесь. Ты был со мной. Спасибо.", style: "whisper" },
+      { text: "Теперь иди. У тебя есть жизнь. У меня — стена. Это не одно и то же.", style: "whisper" },
+      { text: "Но на секунду... на эту секунду... нам было хорошо. Вместе. Правда?", style: "whisper" },
+      
+      { text: "Если вернёшься — я буду тут. Всегда. В стене. В этом свете. Жду. Счастливая. Навсегда.", style: "death" }
+    ]
+  }
+];
+
+// ================================================================
+// ЛОГИКА
+// ================================================================
+const state = {
+  lineIndex: 0,
+  isTyping: false,
+  isPaused: false,
+  totalLines: SCRIPT[0].lines.length
+};
+
+const monologue = document.getElementById('monologue');
+const nextBtn = document.getElementById('nextBtn');
+const sceneEl = document.getElementById('scene');
+const crossbarFill = document.getElementById('crossbarFill');
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function typeLine(text, style) {
+  state.isTyping = true;
+  nextBtn.classList.remove('show');
+
+  const div = document.createElement('div');
+  div.className = 'klara-line';
+  if (style === 'creepy') div.classList.add('creepy');
+  if (style === 'death') div.classList.add('death');
+  if (style === 'psycho') div.classList.add('psycho');
+  monologue.appendChild(div);
+
+  let speed = typeSpeed;
+  if (style === 'creepy') speed = typeSpeed * 1.2;
+  if (style === 'death') speed = typeSpeed * 1.4;
+  if (style === 'psycho') speed = typeSpeed * 0.8;
+
+  for (let i = 0; i < text.length; i++) {
+    if (state.isPaused) { while (state.isPaused) await sleep(200); }
+    div.textContent += text[i];
+    monologue.scrollTop = monologue.scrollHeight;
+    if (text[i] !== ' ') playTypeSound(style);
+    await sleep(speed + Math.random() * 20);
+  }
+
+  state.isTyping = false;
+  await sleep(600);
+  monologue.scrollTop = monologue.scrollHeight;
+}
+
+async function playLine() {
+  if (state.isTyping) return;
+  if (state.lineIndex >= SCRIPT[0].lines.length) {
+    nextBtn.textContent = "УЙТИ";
+    nextBtn.classList.add('show');
+    return;
+  }
+  const line = SCRIPT[0].lines[state.lineIndex];
+  await typeLine(line.text, line.style);
+  state.lineIndex++;
+  
+  const pct = (state.lineIndex / SCRIPT[0].lines.length) * 100;
+  crossbarFill.style.height = pct + '%';
+  
+  nextBtn.classList.add('show');
+  if (state.lineIndex === SCRIPT[0].lines.length - 1) {
+    nextBtn.textContent = "УЙТИ";
+  } else {
+    nextBtn.textContent = "ДАЛЬШЕ →";
+  }
+}
+
+// ================================================================
+// ФИНАЛ
+// ================================================================
+async function playEnding() {
+  isEnding = true;
+  document.getElementById('controls').style.display = 'none';
+  document.getElementById('monologueWrap').style.opacity = '0';
+  nextBtn.classList.remove('show');
+  
+  const fade = document.getElementById('fadeOverlay');
+  fade.classList.add('on');
+  await sleep(3000);
+  
+  sceneEl.classList.remove('active');
+  
+  const finalBlackout = document.getElementById('finalBlackout');
+  const finalText = document.getElementById('finalText');
+  finalBlackout.classList.add('active');
+  
+  await sleep(2000);
+  
+  const screams = [
+    "нет", "постой", "не уходи", "пожалуйста", "я не хочу", 
+    "мне страшно", "тут темно", "вернись", "я одна", "мама", 
+    "я не виновата", "стена", "она дышит", "оно здесь", "оно смотрит",
+    "спаси", "помоги", "я гнию", "больно", "холодно", "я хочу жить",
+    "я не хочу умирать", "не оставляй меня", "я здесь", "я всегда здесь"
+  ];
+  
+  let currentSpeed = 600;
+  
+  for(let i = 0; i < screams.length; i++) {
+    finalText.textContent = screams[i];
+    playTypeSound('scream');
+    finalText.style.transform = `scale(${1 + Math.random()*0.2}) translate(${Math.random()*10-5}px, ${Math.random()*10-5}px)`;
+    await sleep(currentSpeed);
+    currentSpeed *= 0.8;
+    if (currentSpeed < 50) currentSpeed = 50;
+  }
+  
+  finalText.textContent = "ААААААААААААААААААААААААА";
+  finalText.style.transform = "scale(1.5)";
+  await sleep(2000);
+  
+  finalText.style.display = 'none';
+  
+  startAmbience(15, 0.3);
+  
+  document.getElementById('reportPaper').classList.add('show');
+  
+  await sleep(6000);
+  
+  stopAmbience();
+  finalBlackout.classList.remove('active');
+  document.getElementById('reportPaper').classList.remove('show');
+  finalText.style.display = 'block';
+  finalText.style.transform = 'none';
+  
+  isEnding = false;
+  sceneEl.style.display = 'flex';
+  sceneEl.classList.remove('active');
+  
+  document.getElementById('menu').classList.add('active');
+  document.getElementById('controls').style.display = 'flex';
+  document.getElementById('monologueWrap').style.opacity = '1';
+  
+  fade.classList.remove('on');
+  document.getElementById('btnContinue').disabled = false;
+  
+  state.lineIndex = 0;
+  monologue.innerHTML = '';
+  crossbarFill.style.height = '0%';
+}
+
+// ================================================================
+// УПРАВЛЕНИЕ
+// ================================================================
+document.getElementById('btnSettings').addEventListener('click', () => {
+  document.getElementById('settingsModal').classList.add('active');
+  state.isPaused = true;
+});
+document.getElementById('closeSettings').addEventListener('click', () => {
+  document.getElementById('settingsModal').classList.remove('active');
+  state.isPaused = false;
+});
+
+document.getElementById('volSlider').addEventListener('input', (e) => {
+  targetVolume = e.target.value / 100;
+  if (masterGain) masterGain.gain.value = targetVolume;
+  const bgMusic = document.getElementById('bgMusic');
+  if (bgMusic) bgMusic.volume = targetVolume;
+});
+document.getElementById('speedSlider').addEventListener('input', (e) => {
+  typeSpeed = 100 - e.target.value;
+});
+
+document.getElementById('btnSave').addEventListener('click', () => {
+  alert('Прогресс сохранён.');
+});
+
+document.getElementById('btnMenu').addEventListener('click', () => {
+  state.isPaused = true;
+  stopAmbience();
+  const fade = document.getElementById('fadeOverlay');
+  fade.classList.add('on');
+  setTimeout(() => {
+    sceneEl.classList.remove('active');
+    document.getElementById('menu').classList.add('active');
+    fade.classList.remove('on');
+    monologue.innerHTML = '';
+    crossbarFill.style.height = '0%';
+    state.lineIndex = 0;
+    hasMoved = false;
+    sceneEl.style.filter = 'none';
+    sceneEl.style.opacity = '1';
+    sceneEl.style.background = '#000';
+    document.getElementById('spotlight').style = '';
+    document.getElementById('wall').style.filter = 'sepia(1) hue-rotate(-10deg) brightness(0.7) contrast(1.2)';
+    document.getElementById('eyeBall').classList.remove('open');
+    document.getElementById('eyePupilWrap').style.transform = '';
+    document.getElementById('scene').classList.remove('light-out');
+  }, 2000);
+});
+
+// ================================================================
+// ГЛЮКИ В МЕНЮ
+// ================================================================
+const title = document.getElementById('gameTitle');
+const menuBtns = document.querySelectorAll('#menuBtns button');
+const glitchClasses = ['glitch1', 'glitch2', 'glitch3'];
+const btnGlitchClasses = ['btn-glitch1', 'btn-glitch2', 'btn-glitch3'];
+
+function scheduleGlitch() {
+  const delay = 1000 + Math.random() * 3000;
+  setTimeout(() => {
+    const cls = glitchClasses[Math.floor(Math.random() * glitchClasses.length)];
+    title.classList.add(cls);
+    
+    if (Math.random() < 0.6) {
+      const btn = menuBtns[Math.floor(Math.random() * menuBtns.length)];
+      const btnCls = btnGlitchClasses[Math.floor(Math.random() * btnGlitchClasses.length)];
+      btn.classList.add(btnCls);
+      setTimeout(() => btn.classList.remove(btnCls), 200 + Math.random() * 300);
+    }
+
+    const dur = 100 + Math.random() * 400;
+    if (Math.random() < 0.3) {
+      document.body.style.transform = `translate(${Math.random()*6-3}px, ${Math.random()*6-3}px)`;
+      setTimeout(() => document.body.style.transform = 'none', 50);
+    }
+
+    setTimeout(() => {
+      title.classList.remove(cls);
+      scheduleGlitch();
+    }, dur);
+  }, delay);
+}
+
+// ================================================================
+// СТАРТ
+// ================================================================
+
+document.getElementById('discBtn').addEventListener('click', () => {
+  initAudio();
+  const d = document.getElementById('disclaimer');
+  const m = document.getElementById('menu');
+  
+  d.classList.add('fade-out');
+  
+  setTimeout(() => {
+    d.style.display = 'none';
+    m.classList.add('active');
+    scheduleGlitch();
+  }, 2500);
+});
+
+// Логика ускорения музыки и эффектов при наведении
+menuBtns.forEach(btn => {
+  btn.addEventListener('mouseenter', () => {
+    const bgMusic = document.getElementById('bgMusic');
+    if (bgMusic) bgMusic.playbackRate = 2.0;
+    document.body.classList.add('fast-music');
+  });
+  btn.addEventListener('mouseleave', () => {
+    const bgMusic = document.getElementById('bgMusic');
+    if (bgMusic) bgMusic.playbackRate = 1.0;
+    document.body.classList.remove('fast-music');
+  });
+});
+
+document.getElementById('btnNew').addEventListener('click', () => {
+  startListening();
+});
+document.getElementById('btnContinue').addEventListener('click', () => {
+  startListening();
+});
+
+document.getElementById('btnAbout').addEventListener('click', () => {
+  document.getElementById('aboutModal').classList.add('active');
+});
+document.getElementById('closeAbout').addEventListener('click', () => {
+  const modal = document.getElementById('aboutModal');
+  modal.classList.add('closing'); 
+  setTimeout(() => {
+    modal.classList.remove('active');
+    modal.classList.remove('closing'); 
+  }, 1000);
+});
+
+// Кнопка выхода
+document.getElementById('exitBtn').addEventListener('click', () => {
+  window.close();
+  alert("Пожалуйста, закройте вкладку вручную. Она останется в вашей памяти.");
+});
+
+async function startListening() {
+  initAudio();
+  const fade = document.getElementById('fadeOverlay');
+  
+  // Убираем музыку при старте игры
+  const bgMusic = document.getElementById('bgMusic');
+  if (bgMusic) {
+    bgMusic.pause();
+    bgMusic.currentTime = 0; // Сбрасываем
+  }
+
+  document.getElementById('menu').classList.remove('active');
+  
+  fade.classList.add('on');
+  await sleep(2500);
+  
+  sceneEl.classList.add('active');
+  
+  monologue.innerHTML = '';
+  state.lineIndex = 0;
+  state.isPaused = false;
+  hasMoved = false;
+  
+  crossbarFill.style.height = '0%';
+  
+  sceneEl.style.filter = 'none';
+  sceneEl.style.opacity = '1';
+  sceneEl.style.background = '#000';
+  document.getElementById('spotlight').style = '';
+  document.getElementById('wall').style.filter = 'sepia(1) hue-rotate(-10deg) brightness(0.7) contrast(1.2)';
+  document.getElementById('scene').classList.remove('light-out');
+
+  setTimeout(() => {
+    document.getElementById('eyeBall').classList.add('open');
+  }, 1500);
+
+  fade.classList.remove('on');
+  
+  // Включаем ГУЛ вместо музыки в игре
+  startAmbience(30, 0.1);
+  await sleep(2500);
+  playLine();
+}
+
+nextBtn.addEventListener('click', () => {
+  if (state.lineIndex >= SCRIPT[0].lines.length) {
+    playEnding();
+  } else {
+    playLine();
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === ' ' || e.key === 'Enter') {
+    if (nextBtn.classList.contains('show') && !state.isTyping && !state.isPaused) {
+      e.preventDefault();
+      if (state.lineIndex >= SCRIPT[0].lines.length) {
+        playEnding();
+      } else {
+        playLine();
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
